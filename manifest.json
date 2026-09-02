@@ -1,0 +1,18 @@
+﻿{
+  "name": "Snake 3D Arcade - Power-Up Odyssey",
+  "short_name": "Snakey 3D",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#060e0a",
+  "theme_color": "#060e0a",
+  "orientation": "any",
+  "description": "Full-screen touch-first 3D Snake Arcade game with dynamic speed, power-ups, unlockable skins, and quests.",
+  "icons": [
+    {
+      "src": "snake_mascot.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

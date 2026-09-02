@@ -631,9 +631,13 @@ const state = {
   // Achievements Progress
   unlockedAchievements: new Set(),
 
-  // Touch Swipe Coordinates
-  touchStartX: 0,
-  touchStartY: 0,
+  // Continuous Pointer Events Steering
+  isPointerDown: false,
+  activePointerId: null,
+  pointerStartX: 0,
+  pointerStartY: 0,
+  pointerAnchorX: 0,
+  pointerAnchorY: 0,
 
   // Visuals & Effects
   screenShake: 0,
@@ -665,26 +669,28 @@ const DOM = {
   comboBadge: document.getElementById('combo-badge'),
   comboMultiplier: document.getElementById('combo-multiplier'),
   soundBtn: document.getElementById('sound-btn'),
+  soundIcon: document.getElementById('sound-icon'),
   skinsBtn: document.getElementById('skins-btn'),
-  modalSkinsBtn: document.getElementById('modal-skins-btn'),
   trophiesBtn: document.getElementById('trophies-btn'),
-  modalTrophiesBtn: document.getElementById('modal-trophies-btn'),
   trophyBadge: document.getElementById('trophy-badge'),
   hudMascotBadge: document.getElementById('hud-mascot-badge'),
-  skinsOverlay: document.getElementById('skins-overlay'),
-  closeSkinsBtn: document.getElementById('close-skins-btn'),
-  skinsGridContainer: document.getElementById('skins-grid-container'),
-  trophiesOverlay: document.getElementById('trophies-overlay'),
-  closeTrophiesBtn: document.getElementById('close-trophies-btn'),
-  trophiesGridContainer: document.getElementById('trophies-grid-container'),
-  trophiesSubtitle: document.getElementById('trophies-subtitle'),
-  toastContainer: document.getElementById('achievement-toast-container'),
+  pauseBtn: document.getElementById('pause-btn'),
+  pauseIcon: document.getElementById('pause-icon'),
+  guideBtn: document.getElementById('guide-btn'),
+
   biomeCard: document.getElementById('biome-card'),
   biomeIcon: document.getElementById('biome-icon'),
   biomeName: document.getElementById('biome-name'),
   biomeBanner: document.getElementById('biome-banner'),
   bannerIcon: document.getElementById('banner-icon'),
   bannerTitle: document.getElementById('banner-title'),
+  hazardCard: document.getElementById('hazard-card'),
+  strikes: [
+    document.getElementById('strike-1'),
+    document.getElementById('strike-2'),
+    document.getElementById('strike-3'),
+  ],
+
   buffShield: document.getElementById('buff-shield'),
   buffSlowMo: document.getElementById('buff-slowmo'),
   slowMoTimer: document.getElementById('slowmo-timer'),
@@ -694,26 +700,50 @@ const DOM = {
   ghostTimer: document.getElementById('ghost-timer'),
   buffFrenzy: document.getElementById('buff-frenzy'),
   frenzyTimer: document.getElementById('frenzy-timer'),
-  pauseBtn: document.getElementById('pause-btn'),
-  pauseIcon: document.getElementById('pause-icon'),
-  strikes: [
-    document.getElementById('strike-1'),
-    document.getElementById('strike-2'),
-    document.getElementById('strike-3'),
-  ],
-  overlay: document.getElementById('game-overlay'),
-  overlayTitle: document.getElementById('overlay-title'),
-  overlaySubtitle: document.getElementById('overlay-subtitle'),
-  overlayGameOverStats: document.getElementById('overlay-gameover-stats'),
+
+  // Overlays
+  startOverlay: document.getElementById('start-overlay'),
+  startBtn: document.getElementById('start-btn'),
+  startSkinsBtn: document.getElementById('start-skins-btn'),
+  startTrophiesBtn: document.getElementById('start-trophies-btn'),
+  startGuideBtn: document.getElementById('start-guide-btn'),
+
+  pauseOverlay: document.getElementById('pause-overlay'),
+  resumeBtn: document.getElementById('resume-btn'),
+  restartBtn: document.getElementById('restart-btn'),
+  pauseSkinsBtn: document.getElementById('pause-skins-btn'),
+  pauseGuideBtn: document.getElementById('pause-guide-btn'),
+  pauseScore: document.getElementById('pause-score'),
+  pauseSpeed: document.getElementById('pause-speed'),
+  pauseBiome: document.getElementById('pause-biome'),
+
+  gameoverOverlay: document.getElementById('gameover-overlay'),
+  gameoverTitle: document.getElementById('gameover-title'),
+  gameoverReason: document.getElementById('gameover-reason'),
+  endFinalScore: document.getElementById('end-final-score'),
+  endHighScore: document.getElementById('end-high-score'),
   endApples: document.getElementById('end-apples'),
   endSpeed: document.getElementById('end-speed'),
   endCombo: document.getElementById('end-combo'),
   endBiome: document.getElementById('end-biome'),
-  startBtn: document.getElementById('start-btn'),
-  dpadUp: document.getElementById('dpad-up'),
-  dpadDown: document.getElementById('dpad-down'),
-  dpadLeft: document.getElementById('dpad-left'),
-  dpadRight: document.getElementById('dpad-right'),
+  playAgainBtn: document.getElementById('play-again-btn'),
+  gameoverSkinsBtn: document.getElementById('gameover-skins-btn'),
+  gameoverTrophiesBtn: document.getElementById('gameover-trophies-btn'),
+  gameoverHomeBtn: document.getElementById('gameover-home-btn'),
+
+  guideOverlay: document.getElementById('guide-overlay'),
+  closeGuideBtn: document.getElementById('close-guide-btn'),
+
+  skinsOverlay: document.getElementById('skins-overlay'),
+  closeSkinsBtn: document.getElementById('close-skins-btn'),
+  skinsGridContainer: document.getElementById('skins-grid-container'),
+
+  trophiesOverlay: document.getElementById('trophies-overlay'),
+  closeTrophiesBtn: document.getElementById('close-trophies-btn'),
+  trophiesGridContainer: document.getElementById('trophies-grid-container'),
+  trophiesSubtitle: document.getElementById('trophies-subtitle'),
+
+  toastContainer: document.getElementById('achievement-toast-container'),
 };
 
 function triggerHaptic(pattern = 15) {
@@ -735,6 +765,7 @@ function init() {
   renderSkinsModal();
   renderTrophiesModal();
   resetGame();
+  showStartScreen();
   render(performance.now());
 }
 
@@ -807,14 +838,25 @@ function renderTrophiesModal() {
 
 function openTrophiesModal() {
   renderTrophiesModal();
-  DOM.trophiesOverlay.classList.remove('hidden');
+  if (DOM.trophiesOverlay) DOM.trophiesOverlay.classList.remove('hidden');
   if (state.currentState === GAME_STATES.PLAYING) {
     togglePause();
   }
 }
 
 function closeTrophiesModal() {
-  DOM.trophiesOverlay.classList.add('hidden');
+  if (DOM.trophiesOverlay) DOM.trophiesOverlay.classList.add('hidden');
+}
+
+function openGuideModal() {
+  if (DOM.guideOverlay) DOM.guideOverlay.classList.remove('hidden');
+  if (state.currentState === GAME_STATES.PLAYING) {
+    togglePause();
+  }
+}
+
+function closeGuideModal() {
+  if (DOM.guideOverlay) DOM.guideOverlay.classList.add('hidden');
 }
 
 function checkAchievements() {
@@ -1749,15 +1791,10 @@ function triggerGameOver(reason) {
   }
 
   SoundManager.playGameOver();
+  triggerHaptic([60, 40, 100]);
 
   DOM.comboBadge.classList.add('hidden');
-  DOM.endApples.textContent = state.applesEaten;
-  if (DOM.endSpeed) DOM.endSpeed.textContent = `${state.topSpeedReached.toFixed(1)}x`;
-  DOM.endCombo.textContent = `${state.maxCombo}x`;
-  DOM.endBiome.textContent = `${state.currentBiome.icon} ${state.currentBiome.name}`;
-  DOM.overlayGameOverStats.classList.remove('hidden');
-
-  showOverlay('GAME OVER!', `${reason} • Score: ${state.score}`, 'PLAY AGAIN');
+  showGameOverScreen(reason);
 }
 
 function resetGame() {
@@ -1772,7 +1809,6 @@ function resetGame() {
   state.frenzyEndTime = 0;
   DOM.currentScore.textContent = '0';
   DOM.comboBadge.classList.add('hidden');
-  DOM.overlayGameOverStats.classList.add('hidden');
   DOM.biomeBanner.classList.add('hidden');
   updateBombHUD();
 
@@ -1817,10 +1853,11 @@ function startGame() {
   SoundManager.init();
   closeSkinsModal();
   closeTrophiesModal();
+  closeGuideModal();
   resetGame();
   state.currentState = GAME_STATES.PLAYING;
   if (DOM.pauseIcon) DOM.pauseIcon.textContent = '⏸️';
-  hideOverlay();
+  hideAllOverlays();
   triggerHaptic(25);
   SoundManager.playBg();
   state.lastFrameTime = performance.now();
@@ -1834,12 +1871,12 @@ function togglePause() {
     if (DOM.pauseIcon) DOM.pauseIcon.textContent = '▶️';
     triggerHaptic(15);
     SoundManager.pauseBg();
-    showOverlay('GAME PAUSED', 'Press P, Space, or Tap ▶️ to resume!', 'RESUME');
+    showPauseScreen();
   } else if (state.currentState === GAME_STATES.PAUSED) {
     state.currentState = GAME_STATES.PLAYING;
     if (DOM.pauseIcon) DOM.pauseIcon.textContent = '⏸️';
     triggerHaptic(15);
-    hideOverlay();
+    hideAllOverlays();
     SoundManager.resumeBg();
     state.lastFrameTime = performance.now();
     state.animationFrameId = requestAnimationFrame(gameLoop);
@@ -2982,15 +3019,38 @@ function drawFloatingTexts() {
   });
 }
 
-function showOverlay(title, subtitle, btnText) {
-  DOM.overlayTitle.textContent = title;
-  DOM.overlaySubtitle.textContent = subtitle;
-  DOM.startBtn.querySelector('.btn-text').textContent = btnText;
-  DOM.overlay.classList.remove('hidden');
+function hideAllOverlays() {
+  if (DOM.startOverlay) DOM.startOverlay.classList.add('hidden');
+  if (DOM.pauseOverlay) DOM.pauseOverlay.classList.add('hidden');
+  if (DOM.gameoverOverlay) DOM.gameoverOverlay.classList.add('hidden');
+  if (DOM.guideOverlay) DOM.guideOverlay.classList.add('hidden');
+  if (DOM.skinsOverlay) DOM.skinsOverlay.classList.add('hidden');
+  if (DOM.trophiesOverlay) DOM.trophiesOverlay.classList.add('hidden');
 }
 
-function hideOverlay() {
-  DOM.overlay.classList.add('hidden');
+function showStartScreen() {
+  hideAllOverlays();
+  if (DOM.startOverlay) DOM.startOverlay.classList.remove('hidden');
+}
+
+function showPauseScreen() {
+  hideAllOverlays();
+  if (DOM.pauseScore) DOM.pauseScore.textContent = state.score.toString();
+  if (DOM.pauseSpeed) DOM.pauseSpeed.textContent = `${state.speedMultiplier.toFixed(1)}x`;
+  if (DOM.pauseBiome) DOM.pauseBiome.textContent = `${state.currentBiome.icon} ${state.currentBiome.name}`;
+  if (DOM.pauseOverlay) DOM.pauseOverlay.classList.remove('hidden');
+}
+
+function showGameOverScreen(reason) {
+  hideAllOverlays();
+  if (DOM.gameoverReason) DOM.gameoverReason.textContent = reason;
+  if (DOM.endFinalScore) DOM.endFinalScore.textContent = state.score.toString();
+  if (DOM.endHighScore) DOM.endHighScore.textContent = state.highScore.toString();
+  if (DOM.endApples) DOM.endApples.textContent = state.applesEaten.toString();
+  if (DOM.endSpeed) DOM.endSpeed.textContent = `${state.topSpeedReached.toFixed(1)}x`;
+  if (DOM.endCombo) DOM.endCombo.textContent = `${state.maxCombo}x`;
+  if (DOM.endBiome) DOM.endBiome.textContent = `${state.currentBiome.icon} ${state.currentBiome.name}`;
+  if (DOM.gameoverOverlay) DOM.gameoverOverlay.classList.remove('hidden');
 }
 
 function queueDirection(dir) {
@@ -3001,65 +3061,105 @@ function queueDirection(dir) {
   }
 }
 
-function handleTouchStart(e) {
+// =============================================================================
+// Natural Continuous Touch Steering Engine (Pointer Events)
+// =============================================================================
+function handlePointerDown(e) {
   SoundManager.init();
-  if (e.touches && e.touches.length > 0) {
-    state.touchStartX = e.touches[0].clientX;
-    state.touchStartY = e.touches[0].clientY;
-  }
-}
-
-function handleTouchMove(e) {
-  if (state.currentState === GAME_STATES.PLAYING && e.cancelable) {
-    e.preventDefault();
-  }
-}
-
-function handleTouchEnd(e) {
   if (state.currentState !== GAME_STATES.PLAYING) return;
-  if (!e.changedTouches || e.changedTouches.length === 0) return;
 
-  const endX = e.changedTouches[0].clientX;
-  const endY = e.changedTouches[0].clientY;
-  const dx = endX - state.touchStartX;
-  const dy = endY - state.touchStartY;
+  state.isPointerDown = true;
+  state.activePointerId = e.pointerId;
+  state.pointerStartX = e.clientX;
+  state.pointerStartY = e.clientY;
+  state.pointerAnchorX = e.clientX;
+  state.pointerAnchorY = e.clientY;
 
-  const minSwipeDist = 18;
-  if (Math.abs(dx) < minSwipeDist && Math.abs(dy) < minSwipeDist) return;
+  try {
+    if (DOM.canvas.setPointerCapture) {
+      DOM.canvas.setPointerCapture(e.pointerId);
+    }
+  } catch (err) {}
+}
 
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 0) queueDirection(DIRECTIONS.RIGHT);
-    else queueDirection(DIRECTIONS.LEFT);
-  } else {
-    if (dy > 0) queueDirection(DIRECTIONS.DOWN);
-    else queueDirection(DIRECTIONS.UP);
+function handlePointerMove(e) {
+  if (!state.isPointerDown || state.currentState !== GAME_STATES.PLAYING) return;
+  if (e.pointerId !== state.activePointerId) return;
+
+  const dx = e.clientX - state.pointerAnchorX;
+  const dy = e.clientY - state.pointerAnchorY;
+  const dist = Math.hypot(dx, dy);
+
+  // Snappy responsive threshold for turning
+  const TOUCH_THRESHOLD = 16;
+  if (dist >= TOUCH_THRESHOLD) {
+    let targetDir = null;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      targetDir = dx > 0 ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
+    } else {
+      targetDir = dy > 0 ? DIRECTIONS.DOWN : DIRECTIONS.UP;
+    }
+
+    if (targetDir) {
+      queueDirection(targetDir);
+      // Fluid anchor shift allows continuous steering in any direction without lifting finger
+      state.pointerAnchorX = e.clientX;
+      state.pointerAnchorY = e.clientY;
+    }
+  }
+}
+
+function handlePointerUp(e) {
+  if (e.pointerId === state.activePointerId) {
+    state.isPointerDown = false;
+    state.activePointerId = null;
+    try {
+      if (DOM.canvas.releasePointerCapture) {
+        DOM.canvas.releasePointerCapture(e.pointerId);
+      }
+    } catch (err) {}
   }
 }
 
 function setupEventListeners() {
-  DOM.startBtn.addEventListener('click', () => {
-    if (state.currentState === GAME_STATES.READY || state.currentState === GAME_STATES.GAMEOVER) {
-      startGame();
-    } else if (state.currentState === GAME_STATES.PAUSED) {
-      togglePause();
-    }
+  // Start Screen Buttons
+  if (DOM.startBtn) DOM.startBtn.addEventListener('click', startGame);
+  if (DOM.startSkinsBtn) DOM.startSkinsBtn.addEventListener('click', openSkinsModal);
+  if (DOM.startTrophiesBtn) DOM.startTrophiesBtn.addEventListener('click', openTrophiesModal);
+  if (DOM.startGuideBtn) DOM.startGuideBtn.addEventListener('click', openGuideModal);
+
+  // Pause Screen Buttons
+  if (DOM.resumeBtn) DOM.resumeBtn.addEventListener('click', togglePause);
+  if (DOM.restartBtn) DOM.restartBtn.addEventListener('click', startGame);
+  if (DOM.pauseSkinsBtn) DOM.pauseSkinsBtn.addEventListener('click', openSkinsModal);
+  if (DOM.pauseGuideBtn) DOM.pauseGuideBtn.addEventListener('click', openGuideModal);
+
+  // Game Over Buttons
+  if (DOM.playAgainBtn) DOM.playAgainBtn.addEventListener('click', startGame);
+  if (DOM.gameoverSkinsBtn) DOM.gameoverSkinsBtn.addEventListener('click', openSkinsModal);
+  if (DOM.gameoverTrophiesBtn) DOM.gameoverTrophiesBtn.addEventListener('click', openTrophiesModal);
+  if (DOM.gameoverHomeBtn) DOM.gameoverHomeBtn.addEventListener('click', () => {
+    resetGame();
+    showStartScreen();
   });
 
-  DOM.soundBtn.addEventListener('click', () => {
-    SoundManager.init();
-    SoundManager.toggleMute();
-  });
-
-  DOM.skinsBtn.addEventListener('click', openSkinsModal);
-  DOM.modalSkinsBtn.addEventListener('click', openSkinsModal);
-  DOM.hudMascotBadge.addEventListener('click', openSkinsModal);
-  DOM.closeSkinsBtn.addEventListener('click', closeSkinsModal);
+  // Top HUD Action Buttons
+  if (DOM.soundBtn) {
+    DOM.soundBtn.addEventListener('click', () => {
+      SoundManager.init();
+      SoundManager.toggleMute();
+    });
+  }
+  if (DOM.skinsBtn) DOM.skinsBtn.addEventListener('click', openSkinsModal);
+  if (DOM.hudMascotBadge) DOM.hudMascotBadge.addEventListener('click', openSkinsModal);
+  if (DOM.closeSkinsBtn) DOM.closeSkinsBtn.addEventListener('click', closeSkinsModal);
 
   if (DOM.trophiesBtn) DOM.trophiesBtn.addEventListener('click', openTrophiesModal);
-  if (DOM.modalTrophiesBtn) DOM.modalTrophiesBtn.addEventListener('click', openTrophiesModal);
   if (DOM.closeTrophiesBtn) DOM.closeTrophiesBtn.addEventListener('click', closeTrophiesModal);
 
-  // On-Screen Mobile Pause Button
+  if (DOM.guideBtn) DOM.guideBtn.addEventListener('click', openGuideModal);
+  if (DOM.closeGuideBtn) DOM.closeGuideBtn.addEventListener('click', closeGuideModal);
+
   if (DOM.pauseBtn) {
     DOM.pauseBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -3068,24 +3168,31 @@ function setupEventListeners() {
     });
   }
 
-  // Mobile Full-Screen Touch Swipe Navigation
-  if (DOM.screenWrapper) {
-    DOM.screenWrapper.addEventListener('touchstart', handleTouchStart, { passive: true });
-    DOM.screenWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
-    DOM.screenWrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
+  // Pointer Events Touch Steering on Canvas & Arena
+  if (DOM.canvas) {
+    DOM.canvas.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    DOM.canvas.addEventListener('pointermove', handlePointerMove, { passive: true });
+    DOM.canvas.addEventListener('pointerup', handlePointerUp, { passive: true });
+    DOM.canvas.addEventListener('pointercancel', handlePointerUp, { passive: true });
   }
 
-  // Global touch listener for first-gesture WebAudio unlock
+  if (DOM.screenWrapper) {
+    DOM.screenWrapper.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    DOM.screenWrapper.addEventListener('pointermove', handlePointerMove, { passive: true });
+    DOM.screenWrapper.addEventListener('pointerup', handlePointerUp, { passive: true });
+    DOM.screenWrapper.addEventListener('pointercancel', handlePointerUp, { passive: true });
+  }
+
+  // Global Audio Initialization Unlocker
   window.addEventListener('touchstart', () => {
     SoundManager.init();
   }, { once: true, passive: true });
 
-  // Virtual Touch D-Pad Buttons
-  if (DOM.dpadUp) DOM.dpadUp.addEventListener('click', (e) => { e.preventDefault(); queueDirection(DIRECTIONS.UP); });
-  if (DOM.dpadDown) DOM.dpadDown.addEventListener('click', (e) => { e.preventDefault(); queueDirection(DIRECTIONS.DOWN); });
-  if (DOM.dpadLeft) DOM.dpadLeft.addEventListener('click', (e) => { e.preventDefault(); queueDirection(DIRECTIONS.LEFT); });
-  if (DOM.dpadRight) DOM.dpadRight.addEventListener('click', (e) => { e.preventDefault(); queueDirection(DIRECTIONS.RIGHT); });
+  window.addEventListener('pointerdown', () => {
+    SoundManager.init();
+  }, { once: true, passive: true });
 
+  // Desktop Keyboard Controls
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('resize', () => {
     setupCanvasResolution();
@@ -3098,8 +3205,8 @@ function handleKeyDown(event) {
 
   if (key === 'k') {
     event.preventDefault();
-    if (DOM.skinsOverlay.classList.contains('hidden')) openSkinsModal();
-    else closeSkinsModal();
+    if (DOM.skinsOverlay && DOM.skinsOverlay.classList.contains('hidden')) openSkinsModal();
+    else if (DOM.skinsOverlay) closeSkinsModal();
     return;
   }
 
@@ -3111,19 +3218,27 @@ function handleKeyDown(event) {
   }
 
   if (key === 'escape') {
-    if (!DOM.skinsOverlay.classList.contains('hidden')) {
+    if (DOM.skinsOverlay && !DOM.skinsOverlay.classList.contains('hidden')) {
       closeSkinsModal();
       return;
     }
     if (DOM.trophiesOverlay && !DOM.trophiesOverlay.classList.contains('hidden')) {
       closeTrophiesModal();
+      return;
+    }
+    if (DOM.guideOverlay && !DOM.guideOverlay.classList.contains('hidden')) {
+      closeGuideModal();
+      return;
+    }
+    if (state.currentState === GAME_STATES.PLAYING) {
+      togglePause();
       return;
     }
   }
 
   if (key === ' ' || key === 'spacebar') {
     event.preventDefault();
-    if (!DOM.skinsOverlay.classList.contains('hidden')) {
+    if (DOM.skinsOverlay && !DOM.skinsOverlay.classList.contains('hidden')) {
       closeSkinsModal();
       return;
     }
@@ -3131,6 +3246,11 @@ function handleKeyDown(event) {
       closeTrophiesModal();
       return;
     }
+    if (DOM.guideOverlay && !DOM.guideOverlay.classList.contains('hidden')) {
+      closeGuideModal();
+      return;
+    }
+
     if (state.currentState === GAME_STATES.READY || state.currentState === GAME_STATES.GAMEOVER) {
       startGame();
     } else {
@@ -3177,3 +3297,4 @@ function saveHighScore(score) {
 }
 
 window.addEventListener('DOMContentLoaded', init);
+
