@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#060e09" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Snakey 3D" />
+  <meta name="description" content="Play Snake 3D Arcade on Mobile and Desktop with Progressive Speed, Power-Ups, Skins, and Quests." />
+  <title>Snake 3D Arcade - Mobile & Desktop Edition</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="biome-jungle">
+  <!-- Ambient Floating Glows -->
+  <div class="ambient-glow glow-1" id="ambient-glow-1"></div>
+  <div class="ambient-glow glow-2" id="ambient-glow-2"></div>
+  <div class="ambient-glow glow-3" id="ambient-glow-3"></div>
+
+  <!-- Achievement Toast Notification Banner -->
+  <div id="achievement-toast-container" class="toast-container" aria-live="polite"></div>
+
+  <div id="game-app" class="game-container">
+    <!-- Header / HUD -->
+    <header class="game-header">
+      <div class="brand">
+        <div class="mascot-mini-badge" id="hud-mascot-badge" title="Click to Change Skin">
+          <img src="snake_mascot.jpg" alt="Snake Mascot Icon" class="mini-avatar" id="mascot-avatar" />
+        </div>
+        <div class="brand-text">
+          <h1 class="game-title">SNAKEY<span class="highlight">3D</span> <span class="badge-widescreen">WIDE</span></h1>
+          <span class="game-tagline">Power-Up Odyssey & Dynamic Speed</span>
+        </div>
+      </div>
+
+      <!-- Live Stats, Biome, Speed, Skins & Hazards HUD -->
+      <div class="hud-controls">
+        <!-- Biome Badge -->
+        <div class="biome-card jungle" id="biome-card" title="World transforms as your score rises!">
+          <span id="biome-icon" class="biome-icon">🌴</span>
+          <span id="biome-name" class="biome-name">JUNGLE</span>
+        </div>
+
+        <!-- Bomb Danger Counter -->
+        <div class="hazard-card" title="Eating 3 bombs causes Game Over! Collect 💖 Hearts to defuse!">
+          <span class="hazard-label">BOMBS</span>
+          <div class="strike-icons" id="bomb-strikes-container">
+            <span class="strike-slot" id="strike-1">💣</span>
+            <span class="strike-slot" id="strike-2">💣</span>
+            <span class="strike-slot" id="strike-3">💣</span>
+          </div>
+        </div>
+
+        <!-- Combo Badge -->
+        <div id="combo-badge" class="combo-badge hidden">
+          <span id="combo-multiplier">2x</span> COMBO!
+        </div>
+
+        <!-- Stats & Dynamic Speedometer -->
+        <div class="hud-stats">
+          <div class="stat-card speed chill" id="speed-card" title="Snake speeds up gradually as you eat food!">
+            <span class="stat-label">SPEED</span>
+            <span id="current-speed" class="stat-value">1.0x</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">SCORE</span>
+            <span id="current-score" class="stat-value">0</span>
+          </div>
+          <div class="stat-card gold">
+            <span class="stat-label">RECORD</span>
+            <span id="high-score" class="stat-value">0</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons Group -->
+        <div class="hud-actions">
+          <!-- Achievements / Trophy Button -->
+          <button id="trophies-btn" class="icon-btn trophy-toggle-btn" title="View Achievements & Trophies (T)" aria-label="Achievements">
+            <span id="trophy-btn-icon">🏆</span>
+            <span id="trophy-badge" class="badge-counter">0/10</span>
+          </button>
+
+          <!-- Skin Wardrobe Button -->
+          <button id="skins-btn" class="icon-btn skin-toggle-btn" title="Unlock & Equip Skins (K)" aria-label="Skins Wardrobe">
+            <span id="skin-btn-icon">🐍</span>
+          </button>
+
+          <!-- Mobile Pause / Resume Button -->
+          <button id="pause-btn" class="icon-btn pause-toggle-btn" title="Pause / Resume Game (P / Space)" aria-label="Pause Game">
+            <span id="pause-icon">⏸️</span>
+          </button>
+
+          <!-- Sound Mute / Unmute Button -->
+          <button id="sound-btn" class="icon-btn" title="Toggle Audio (M)" aria-label="Toggle Sound">
+            <span id="sound-icon">🔊</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Canvas / Widescreen Game Arena -->
+    <main class="game-screen-wrapper" id="screen-wrapper">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Active Power-Up Buff Status Bar -->
+      <div id="powerup-hud" class="powerup-hud">
+        <div id="buff-shield" class="buff-badge shield hidden">
+          <span class="buff-icon">🛡️</span>
+          <span class="buff-text">SHIELD ACTIVE</span>
+        </div>
+        <div id="buff-slowmo" class="buff-badge slowmo hidden">
+          <span class="buff-icon">❄️</span>
+          <span class="buff-text">SLOW-MO <strong id="slowmo-timer">6.0s</strong></span>
+        </div>
+        <div id="buff-magnet" class="buff-badge magnet hidden">
+          <span class="buff-icon">🧲</span>
+          <span class="buff-text">MAGNET <strong id="magnet-timer">6.0s</strong></span>
+        </div>
+        <div id="buff-ghost" class="buff-badge ghost hidden">
+          <span class="buff-icon">👻</span>
+          <span class="buff-text">GHOST PHASE <strong id="ghost-timer">6.0s</strong></span>
+        </div>
+        <div id="buff-frenzy" class="buff-badge frenzy hidden">
+          <span class="buff-icon">⭐</span>
+          <span class="buff-text">2X FRENZY <strong id="frenzy-timer">8.0s</strong></span>
+        </div>
+      </div>
+
+      <!-- Biome Shift Announcement Banner -->
+      <div id="biome-banner" class="biome-banner hidden">
+        <div class="banner-content">
+          <span id="banner-icon" class="banner-icon">🌋</span>
+          <div class="banner-text-group">
+            <span class="banner-eyebrow">WORLD TRANSFORMED!</span>
+            <h3 id="banner-title" class="banner-title">VOLCANO FORGE</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overlay (Start / Game Over / Pause) -->
+      <div id="game-overlay" class="overlay">
+        <div class="overlay-card">
+          <div class="mascot-hero-frame">
+            <img src="snake_mascot.jpg" alt="Snakey Mascot" class="mascot-hero-img" id="modal-mascot-img" />
+          </div>
+          
+          <h2 id="overlay-title" class="overlay-title">POWER-UP ODYSSEY</h2>
+          <p id="overlay-subtitle" class="overlay-subtitle">Relaxed start speed that gradually accelerates as you eat! Dodge bombs, phase walls, and unlock trophies!</p>
+          
+          <!-- Power-Up & Hazard Legend -->
+          <div class="powerup-legend">
+            <div class="legend-item"><span class="legend-icon">🛡️</span> <strong>Shield:</strong> Blocks 1 Bomb</div>
+            <div class="legend-item"><span class="legend-icon">❄️</span> <strong>Freeze:</strong> Slow-Motion</div>
+            <div class="legend-item"><span class="legend-icon">🧲</span> <strong>Magnet:</strong> Pulls Fruits (6s)</div>
+            <div class="legend-item"><span class="legend-icon">👻</span> <strong>Ghost:</strong> Pass Body & Walls (6s)</div>
+            <div class="legend-item"><span class="legend-icon">⭐</span> <strong>Star:</strong> 2X Double Points (8s)</div>
+            <div class="legend-item"><span class="legend-icon">💖</span> <strong>Heart:</strong> Clears 1 Bomb Strike</div>
+            <div class="legend-item danger"><span class="legend-icon">💣</span> <strong>Bomb:</strong> -20 pts (3 Strikes = Defeat)</div>
+            <div class="legend-item gold"><span class="legend-icon">🎁</span> <strong>Mystery:</strong> +100 Jackpot Fruit</div>
+          </div>
+
+          <!-- Biome World Roadmap -->
+          <div class="biome-roadmap">
+            <div class="biome-step active">
+              <span class="step-icon">🌴</span>
+              <span class="step-label">Jungle (0)</span>
+            </div>
+            <span class="step-arrow">➔</span>
+            <div class="biome-step">
+              <span class="step-icon">🌋</span>
+              <span class="step-label">Volcano (150)</span>
+            </div>
+            <span class="step-arrow">➔</span>
+            <div class="biome-step">
+              <span class="step-icon">🌌</span>
+              <span class="step-label">Cyber (300)</span>
+            </div>
+            <span class="step-arrow">➔</span>
+            <div class="biome-step">
+              <span class="step-icon">❄️</span>
+              <span class="step-label">Glacier (500)</span>
+            </div>
+          </div>
+
+          <div class="overlay-stats hidden" id="overlay-gameover-stats">
+            <div class="end-stat"><span class="end-stat-lbl">Fruits:</span> <strong id="end-apples">0</strong></div>
+            <div class="end-stat"><span class="end-stat-lbl">Top Speed:</span> <strong id="end-speed">1.0x</strong></div>
+            <div class="end-stat"><span class="end-stat-lbl">Max Combo:</span> <strong id="end-combo">1x</strong></div>
+            <div class="end-stat"><span class="end-stat-lbl">World:</span> <strong id="end-biome">🌴 Jungle</strong></div>
+          </div>
+
+          <div class="modal-buttons">
+            <button id="start-btn" class="primary-btn">
+              <span class="btn-text">START ADVENTURE</span>
+              <span class="btn-subtext">Press SPACE or Click</span>
+            </button>
+            <button id="modal-skins-btn" class="secondary-btn">
+              <span>🐍 SKINS</span>
+            </button>
+            <button id="modal-trophies-btn" class="secondary-btn gold-border">
+              <span>🏆 TROPHIES</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Snake Skins Selection Wardrobe Modal -->
+      <div id="skins-overlay" class="overlay hidden">
+        <div class="overlay-card skins-card">
+          <div class="skins-modal-header">
+            <h2 class="overlay-title">🐍 SNAKE SKINS WARDROBE</h2>
+            <button id="close-skins-btn" class="close-btn" title="Close">✕</button>
+          </div>
+          <p class="skins-subtitle">Play to reach score milestones & unlock legendary snake skins!</p>
+
+          <!-- Skin Cards Grid -->
+          <div class="skins-grid" id="skins-grid-container">
+            <!-- Dynamically populated via index.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Achievements & Trophies Modal -->
+      <div id="trophies-overlay" class="overlay hidden">
+        <div class="overlay-card trophies-card">
+          <div class="skins-modal-header">
+            <h2 class="overlay-title">🏆 ACHIEVEMENTS & QUESTS</h2>
+            <button id="close-trophies-btn" class="close-btn" title="Close">✕</button>
+          </div>
+          <p class="skins-subtitle" id="trophies-subtitle">Complete in-game challenges to earn mastery badges!</p>
+
+          <!-- Trophies Grid -->
+          <div class="trophies-grid" id="trophies-grid-container">
+            <!-- Dynamically populated via index.js -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Mobile Touch / Virtual D-Pad Controls -->
+    <div id="touch-controls" class="touch-controls">
+      <div class="dpad-container">
+        <button class="dpad-btn dpad-up" id="dpad-up" aria-label="Up">▲</button>
+        <div class="dpad-horizontal">
+          <button class="dpad-btn dpad-left" id="dpad-left" aria-label="Left">◀</button>
+          <button class="dpad-btn dpad-down" id="dpad-down" aria-label="Down">▼</button>
+          <button class="dpad-btn dpad-right" id="dpad-right" aria-label="Right">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Controls & Hints -->
+    <footer class="game-footer">
+      <div class="controls-hint desktop-hints">
+        <span class="hint-group"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Arrows</kbd> Slither</span>
+        <span class="divider">•</span>
+        <span class="hint-group"><kbd>K</kbd> Skins</span>
+        <span class="divider">•</span>
+        <span class="hint-group"><kbd>T</kbd> Trophies</span>
+        <span class="divider">•</span>
+        <span class="hint-group"><kbd>SPACE</kbd> / <kbd>P</kbd> Pause</span>
+        <span class="divider">•</span>
+        <span class="hint-group"><kbd>M</kbd> Audio</span>
+      </div>
+      <div class="controls-hint mobile-hints">
+        <span>👆 <strong>Swipe Canvas</strong> or use <strong>Virtual D-Pad</strong> to Slither</span>
+        <span class="divider">•</span>
+        <span>Tap ⏸️ to Pause</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>
